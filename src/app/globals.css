@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─────────────────────────────────────────
+  CSS VARIABLES
+───────────────────────────────────────── */
+:root {
+  --brand-green: #00ff88;
+  --brand-cyan: #00d4ff;
+  --brand-purple: #a855f7;
+  --brand-amber: #f59e0b;
+  --brand-red: #ef4444;
+  --dark: #050a0f;
+  --dark-100: #0a1520;
+  --dark-200: #0d1f2d;
+}
+
+/* ─────────────────────────────────────────
+  BASE RESET
+───────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 255, 136, 0.2) #050a0f;
+}
+
+body {
+  background-color: var(--dark);
+  color: #c9d1d9;
+  font-family: 'Rajdhani', sans-serif;
+  overflow-x: hidden;
+}
+
+/* ─────────────────────────────────────────
+  SCROLLBAR
+───────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #050a0f;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 136, 0.2);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 136, 0.4);
+}
+
+/* ─────────────────────────────────────────
+  TYPOGRAPHY
+───────────────────────────────────────── */
+.font-mono {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+.font-display {
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* ─────────────────────────────────────────
+  CLIP PATH UTILITY
+───────────────────────────────────────── */
+.clip-path-angled {
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+}
+
+/* ─────────────────────────────────────────
+  SCAN LINE EFFECT
+───────────────────────────────────────── */
+.scan-line {
+  background-image: linear-gradient(
+    transparent 50%,
+    rgba(0, 255, 136, 0.015) 50%
+  );
+  background-size: 100% 4px;
+}
+
+/* ─────────────────────────────────────────
+   GRID BACKGROUND
+───────────────────────────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ─────────────────────────────────────────
+   GLITCH EFFECT
+───────────────────────────────────────── */
+.glitch {
+  position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch::before {
+  animation: glitch1 3s infinite;
+  color: var(--brand-cyan);
+  clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%);
+  transform: translateX(-2px);
+}
+
+.glitch::after {
+  animation: glitch2 3s infinite;
+  color: var(--brand-green);
+  clip-path: polygon(0 65%, 100% 65%, 100% 100%, 0 100%);
+  transform: translateX(2px);
+}
+
+@keyframes glitch1 {
+  0%, 90%, 100% { transform: translateX(-2px); opacity: 0; }
+  92% { transform: translateX(-4px) skew(-2deg); opacity: 0.8; }
+  95% { transform: translateX(2px); opacity: 0.8; }
+  97% { opacity: 0; }
+}
+
+@keyframes glitch2 {
+  0%, 88%, 100% { transform: translateX(2px); opacity: 0; }
+  91% { transform: translateX(4px) skew(2deg); opacity: 0.7; }
+  94% { transform: translateX(-2px); opacity: 0.7; }
+  96% { opacity: 0; }
+}
+
+/* ─────────────────────────────────────────
+   ANIMATIONS
+───────────────────────────────────────── */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(0, 255, 136, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.6); }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes matrixFall {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ─────────────────────────────────────────
+   ANIMATION UTILITIES
+───────────────────────────────────────── */
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease forwards;
+}
+
+/* Staggered fade up delays */
+.animate-fade-up-1 { animation: fadeUp 0.6s ease 0.1s forwards; opacity: 0; }
+.animate-fade-up-2 { animation: fadeUp 0.6s ease 0.2s forwards; opacity: 0; }
+.animate-fade-up-3 { animation: fadeUp 0.6s ease 0.3s forwards; opacity: 0; }
+.animate-fade-up-4 { animation: fadeUp 0.6s ease 0.4s forwards; opacity: 0; }
+
+/* ─────────────────────────────────────────
+   SELECTION COLOR
+───────────────────────────────────────── */
+::selection {
+  background: rgba(0, 255, 136, 0.2);
+  color: #00ff88;
+}
