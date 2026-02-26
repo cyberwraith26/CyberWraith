@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import type { Metadata } from "next";
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
@@ -19,24 +19,25 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: Props): Promise<Metadata> {
-  const tool = getToolBySlug(params.slug);
+  const { slug } = await params;
+  const tool = getToolBySlug(slug);
   if (!tool) return { title: "Settings" };
   return { title: `${tool.name} Settings` };
 }
 
 export default async function ToolSettingsPage({ params }: Props) {
+  const { slug } = await params;
+
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const tool = getToolBySlug(params.slug);
+  const tool = getToolBySlug(slug);
   if (!tool) notFound();
 
-  const tier =
-    (session.user as { tier?: string }).tier ?? "free";
+  const tier = (session.user as { tier?: string }).tier ?? "free";
   const hasAccess = canAccessTool(tier, tool.requiredTier);
 
-  // Redirect to tool page if no access
-  if (!hasAccess) redirect(`/tools/${params.slug}`);
+  if (!hasAccess) redirect(`/tools/${slug}`);
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -196,7 +197,6 @@ export default async function ToolSettingsPage({ params }: Props) {
                   {item.desc}
                 </div>
               </div>
-              {/* Toggle */}
               <div
                 className="w-10 h-5 border border-brand-green/30 bg-brand-green/10 relative cursor-pointer shrink-0"
                 style={{ clipPath: "none" }}
