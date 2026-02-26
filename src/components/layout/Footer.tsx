@@ -35,8 +35,8 @@ export const Footer = () => {
             {/* Social Links */}
             <div className="flex gap-4">
               {[
-                { label: "GH", href: "https://github.com" },
-                { label: "TW", href: "https://twitter.com" },
+                { label: "GH", href: "https://github.com/cyberwraith26" },
+                { label: "TW", href: "https://twitter.com/TheCyberWraithMentor" },
                 { label: "LI", href: "https://linkedin.com" },
               ].map((social) => (
                 <a

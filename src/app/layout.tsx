@@ -3,6 +3,7 @@ import { Providers } from "@/components/layout/Providers";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
     url: process.env.NEXT_PUBLIC_APP_URL,
     title: "CyberWraith — SaaS & Tech Solutions Platform",
     description:
-      "The all-in-one platform for freelancers and businesses. Productivity tools, web development, Linux systems, and cybersecurity.",
+      "The all-in-one platform for freelancers and businesses.",
     siteName: "CyberWraith",
     images: [
       {
@@ -63,22 +64,46 @@ export const metadata: Metadata = {
   },
 };
 
+const NO_LAYOUT_PREFIXES = [
+  "/dashboard",
+  "/tools",
+  "/settings",
+  "/admin",
+  "/login",
+  "/signup",
+  "/forgot-password",
+];
+
 export default async function RootLayout({
   children,
 }: {
   readonly children: React.ReactNode;
 }) {
   const session = await auth();
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") ?? 
+    headersList.get("x-invoke-path") ?? 
+    headersList.get("x-forwarded-uri") ?? "";
+
+  const isPublicPage = !NO_LAYOUT_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
 
   return (
     <html lang="en" className="dark">
       <body className="bg-dark text-white/80 antialiased">
         <Providers session={session}>
-          <Header />
-          <main className="min-h-screen pt-[60px]">
-            {children}
-          </main>
-          <Footer />
+          {isPublicPage ? (
+            <>
+              <Header />
+              <main className="min-h-screen pt-[60px]">
+                {children}
+              </main>
+              <Footer />
+            </>
+          ) : (
+            <>{children}</>
+          )}
         </Providers>
       </body>
     </html>

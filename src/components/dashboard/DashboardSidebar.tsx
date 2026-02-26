@@ -93,7 +93,7 @@ export const DashboardSidebar = () => {
               return (
                 <Link
                   key={tool.slug}
-                  href={`/dashboard/tools/${tool.slug}`}
+                  href={`/tools/${tool.slug}`} 
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2",
                     "border-l-2 transition-all duration-200",
@@ -127,7 +127,7 @@ export const DashboardSidebar = () => {
 
             {/* View all link */}
             <Link
-              href="/dashboard/tools"
+              href="/tools"  
               className="flex items-center gap-2 px-3 py-2 font-mono text-[10px] text-brand-green/30 hover:text-brand-green/60 tracking-widest transition-colors"
             >
               + VIEW ALL TOOLS

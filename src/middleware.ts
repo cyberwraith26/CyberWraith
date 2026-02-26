@@ -1,22 +1,16 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
 
 // Routes that require authentication
 const PROTECTED_ROUTES = [
   "/dashboard",
-  "/dashboard/tools",
-  "/dashboard/settings",
-  "/dashboard/settings/billing",
+  "/tools",
+  "/settings",
 ];
 
 // Routes that require admin role
 const ADMIN_ROUTES = [
   "/admin",
-  "/admin/users",
-  "/admin/tools",
-  "/admin/subscriptions",
-  "/admin/analytics",
 ];
 
 // Routes that authenticated users should not access
@@ -26,14 +20,16 @@ const AUTH_ROUTES = [
   "/forgot-password",
 ];
 
-export default auth((req: NextRequest & { auth: { user?: { role?: string } } | null }) => {
+export default auth((req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
   const isAuthenticated = !!session?.user;
-  const isAdmin = session?.user?.role === "admin";
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "admin";
 
   // Redirect authenticated users away from auth pages
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+  const isAuthRoute = AUTH_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
   if (isAuthRoute && isAuthenticated) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
@@ -59,24 +55,18 @@ export default auth((req: NextRequest & { auth: { user?: { role?: string } } | n
       return NextResponse.redirect(loginUrl);
     }
     if (!isAdmin) {
-      // Authenticated but not admin — redirect to dashboard
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
   }
 
-  return NextResponse.next();
+  // Inject pathname as header so server layout can read it
+  const response = NextResponse.next();
+  response.headers.set("x-pathname", pathname);
+  return response;
 });
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths EXCEPT:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico
-     * - public folder files
-     * - api/auth (NextAuth internal routes)
-     */
     "/((?!_next/static|_next/image|favicon.ico|public|api/auth).*)",
   ],
 };

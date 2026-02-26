@@ -11,14 +11,22 @@ export const loginSchema = z.object({
     .min(6, "Password must be at least 6 characters"),
 });
 
-export const signupSchema = z
+// API schema — no confirmPassword, used by register route
+export const signupSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+    .regex(/[0-9]/, "Must contain at least one number"),
+});
+
+// Form schema — includes confirmPassword, used by signup page
+export const signupFormSchema = z
   .object({
-    name: z
-      .string()
-      .min(1, "Name must be at least 2 characters"),
-    email: z
-      .string()
-      .email("Invalid email address"),
+    name: z.string().min(2, "Name must be at least 2 characters"),
+    email: z.string().email("Invalid email address"),
     password: z
       .string()
       .min(8, "Password must be at least 8 characters")
@@ -85,6 +93,7 @@ export const passwordChangeSchema = z
 // Infer TypeScript types from schemas
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
+export type SignupFormInput = z.infer<typeof signupFormSchema>;
 export type ContactInput = z.infer<typeof contactSchema>;
 export type AccountSettingsInput = z.infer<typeof accountSettingsSchema>;
 export type PasswordChangeInput = z.infer<typeof passwordChangeSchema>;

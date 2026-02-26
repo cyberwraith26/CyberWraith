@@ -1,44 +1,74 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hooks/useAuth";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+import { z } from "zod";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { signupSchema } from "@/lib/validations";
-import type { SignupInput } from "@/lib/validations";
-import { cn } from "@/lib/utils";
+
+const signupSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    email: z.string().email("Invalid email address"),
+    password: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .regex(
+        /[A-Z]/,
+        "Password must contain at least one uppercase letter"
+      )
+      .regex(/[0-9]/, "Password must contain at least one number"),
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+type SignupForm = z.infer<typeof signupSchema>;
 
 export default function SignupPage() {
   const router = useRouter();
-  const { loginWithGoogle, loginWithGitHub } = useAuth();
-  const [form, setForm] = useState<SignupInput>({
+
+  const [form, setForm] = useState<SignupForm>({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
-  const [errors, setErrors] = useState<Partial<Record<keyof SignupInput, string>>>({});
-  const [authError, setAuthError] = useState("");
+
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof SignupForm | "general", string>>
+  >({});
   const [isLoading, setIsLoading] = useState(false);
+
+  const updateField = (field: keyof SignupForm, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({});
 
     const result = signupSchema.safeParse(form);
     if (!result.success) {
-      const fieldErrors: Partial<Record<keyof SignupInput, string>> = {};
+      const fieldErrors: Partial<Record<keyof SignupForm, string>> = {};
       result.error.errors.forEach((err) => {
-        const field = err.path[0] as keyof SignupInput;
-        fieldErrors[field] = err.message;
+        const field = err.path[0] as keyof SignupForm;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = err.message;
+        }
       });
       setErrors(fieldErrors);
       return;
     }
 
-    setErrors({});
-    setAuthError("");
     setIsLoading(true);
 
     try {
@@ -46,8 +76,8 @@ export default function SignupPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name,
-          email: form.email,
+          name: form.name.trim(),
+          email: form.email.trim().toLowerCase(),
           password: form.password,
         }),
       });
@@ -55,171 +85,272 @@ export default function SignupPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setAuthError(data.error ?? "Registration failed");
+        if (data.error?.toLowerCase().includes("email")) {
+          setErrors({
+            email: "An account with this email already exists.",
+          });
+        } else {
+          setErrors({
+            general: data.error ?? "Registration failed.",
+          });
+        }
         return;
       }
 
-      // Auto sign in after registration
-      router.push("/login?registered=true");
+      const signInRes = await signIn("credentials", {
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        redirect: false,
+      });
+
+      if (signInRes?.ok) {
+        router.push("/dashboard");
+        router.refresh();
+      } else {
+        router.push("/login?registered=true");
+      }
     } catch {
-      setAuthError("Something went wrong. Please try again.");
+      setErrors({
+        general: "Something went wrong. Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-20 bg-dark grid-bg">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-flex items-center gap-3 mb-8 group">
-            <div
-              className="w-8 h-8 transition-all group-hover:shadow-neon"
-              style={{
-                background: "linear-gradient(135deg, #00ff88, #00d4ff)",
-                clipPath:
-                  "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
-              }}
-            />
-            <span className="font-mono text-lg tracking-[3px] text-white">
-              CYBER<span className="text-brand-green">WRAITH</span>
-            </span>
-          </Link>
-          <span className="font-mono text-[11px] text-brand-green/60 tracking-[3px] block mb-3">
-            // AUTH.register()
+    <div className="min-h-screen bg-dark grid-bg flex flex-col">
+
+      {/* Nav */}
+      <nav className="flex items-center justify-between px-6 lg:px-10 h-[60px] border-b border-white/5 shrink-0">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-3 group">
+          <div
+            className="w-7 h-7 group-hover:shadow-neon transition-all"
+            style={{
+              background: "linear-gradient(135deg, #00ff88, #00d4ff)",
+              clipPath:
+                "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+            }}
+          />
+          <span className="font-mono text-sm tracking-[3px] text-white">
+            CYBER<span className="text-brand-green">WRAITH</span>
           </span>
-          <h1 className="font-display font-bold text-2xl text-white">
-            Create your account
-          </h1>
-          <p className="text-white/40 font-display text-sm mt-2">
-            14-day free trial. No credit card required.
-          </p>
+        </Link>
+
+        {/* Nav links */}
+        <div className="hidden md:flex items-center gap-6">
+          {[
+            { label: "Tools", href: "/#tools" },
+            { label: "Pricing", href: "/#pricing" },
+            { label: "Blog", href: "/blog" },
+            { label: "Contact", href: "/#contact" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="font-mono text-[11px] tracking-widest uppercase text-white/30 hover:text-brand-green transition-colors"
+            >
+              {item.label}
+            </Link>
+          ))}
         </div>
 
-        {/* Card */}
-        <div className="border border-brand-green/20 bg-dark-100 p-8 shadow-[0_0_40px_rgba(0,255,136,0.05)]">
+        {/* Right — login link */}
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[11px] text-white/20 hidden sm:block">
+            Have an account?
+          </span>
+          <Link
+            href="/login"
+            className="font-mono text-[11px] text-brand-green hover:text-brand-green/80 tracking-widest transition-colors border border-brand-green/30 px-4 py-1.5 hover:border-brand-green/60"
+          >
+            SIGN IN →
+          </Link>
+        </div>
+      </nav>
 
-          {/* OAuth Buttons */}
-          <div className="flex flex-col gap-3 mb-8">
-            <button
-              onClick={loginWithGoogle}
-              className={cn(
-                "flex items-center justify-center gap-3 py-3",
-                "border border-white/10 font-mono text-xs tracking-widest uppercase",
-                "text-white/60 hover:text-white hover:border-white/20",
-                "transition-all duration-200 hover:bg-white/3"
-              )}
-            >
-              <span>G</span> Sign up with Google
-            </button>
-            <button
-              onClick={loginWithGitHub}
-              className={cn(
-                "flex items-center justify-center gap-3 py-3",
-                "border border-white/10 font-mono text-xs tracking-widest uppercase",
-                "text-white/60 hover:text-white hover:border-white/20",
-                "transition-all duration-200 hover:bg-white/3"
-              )}
-            >
-              <span>⌥</span> Sign up with GitHub
-            </button>
-          </div>
+      {/* Form area */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 mb-8">
-            <div className="flex-1 h-px bg-white/5" />
-            <span className="font-mono text-[10px] text-white/20 tracking-widest">
-              OR
-            </span>
-            <div className="flex-1 h-px bg-white/5" />
+          {/* Header */}
+          <div className="text-center mb-10">
+            <div className="font-mono text-[10px] text-white/20 tracking-[3px] mb-3">
+              // AUTH.register()
+            </div>
+            <h1 className="font-display font-bold text-3xl text-white mb-2">
+              Create your account
+            </h1>
+            <p className="text-white/40 font-display text-sm">
+              Start your 14-day free trial. No credit card required.
+            </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            <Input
-              label="Full Name"
-              placeholder="John Doe"
-              value={form.name}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, name: e.target.value }))
-              }
-              error={errors.name}
-            />
-            <Input
-              label="Email"
-              type="email"
-              placeholder="user@domain.com"
-              value={form.email}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, email: e.target.value }))
-              }
-              error={errors.email}
-            />
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Min 8 chars, 1 uppercase, 1 number"
-              value={form.password}
-              onChange={(e) =>
-                setForm((prev) => ({ ...prev, password: e.target.value }))
-              }
-              error={errors.password}
-            />
-            <Input
-              label="Confirm Password"
-              type="password"
-              placeholder="••••••••"
-              value={form.confirmPassword}
-              onChange={(e) =>
-                setForm((prev) => ({
-                  ...prev,
-                  confirmPassword: e.target.value,
-                }))
-              }
-              error={errors.confirmPassword}
-            />
+          <div className="border border-white/5 bg-dark-100 p-8">
 
-            {/* Auth error */}
-            {authError && (
-              <div className="border border-brand-red/30 bg-brand-red/5 px-4 py-3 font-mono text-xs text-brand-red">
-                ✕ {authError}
+            {/* General error */}
+            {errors.general && (
+              <div className="border border-brand-red/30 bg-brand-red/5 px-4 py-3 mb-6 font-mono text-xs text-brand-red">
+                ✕ {errors.general}
               </div>
             )}
 
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              className="w-full mt-2"
-              isLoading={isLoading}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+              <div className="flex flex-col gap-1.5">
+                <Input
+                  label="Full Name"
+                  type="text"
+                  placeholder="John Smith"
+                  value={form.name}
+                  onChange={(e) => updateField("name", e.target.value)}
+                  autoComplete="name"
+                  autoFocus
+                />
+                {errors.name && (
+                  <span className="font-mono text-[11px] text-brand-red">
+                    ✕ {errors.name}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Input
+                  label="Email Address"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={form.email}
+                  onChange={(e) => updateField("email", e.target.value)}
+                  autoComplete="email"
+                />
+                {errors.email && (
+                  <span className="font-mono text-[11px] text-brand-red">
+                    ✕ {errors.email}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Input
+                  label="Password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) =>
+                    updateField("password", e.target.value)
+                  }
+                  autoComplete="new-password"
+                  hint="Min 8 characters, one uppercase, one number"
+                />
+                {errors.password && (
+                  <span className="font-mono text-[11px] text-brand-red">
+                    ✕ {errors.password}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Input
+                  label="Confirm Password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={form.confirmPassword}
+                  onChange={(e) =>
+                    updateField("confirmPassword", e.target.value)
+                  }
+                  autoComplete="new-password"
+                />
+                {errors.confirmPassword && (
+                  <span className="font-mono text-[11px] text-brand-red">
+                    ✕ {errors.confirmPassword}
+                  </span>
+                )}
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                className="w-full mt-2"
+                isLoading={isLoading}
+              >
+                {isLoading ? "Creating account..." : "Create Account →"}
+              </Button>
+
+              <p className="font-mono text-[10px] text-white/20 text-center leading-relaxed">
+                By signing up you agree to our{" "}
+                <Link
+                  href="/terms"
+                  className="text-brand-green/50 hover:text-brand-green transition-colors"
+                >
+                  Terms
+                </Link>{" "}
+                and{" "}
+                <Link
+                  href="/privacy"
+                  className="text-brand-green/50 hover:text-brand-green transition-colors"
+                >
+                  Privacy Policy
+                </Link>
+              </p>
+            </form>
+
+            {/* Divider */}
+            <div className="flex items-center gap-4 my-6">
+              <div className="flex-1 h-px bg-white/5" />
+              <span className="font-mono text-[10px] text-white/20 tracking-widest">
+                OR
+              </span>
+              <div className="flex-1 h-px bg-white/5" />
+            </div>
+
+            {/* OAuth */}
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  signIn("google", { callbackUrl: "/dashboard" })
+                }
+                className={cn(
+                  "w-full flex items-center justify-center gap-3",
+                  "border border-white/10 bg-white/3 hover:bg-white/5",
+                  "font-display text-sm text-white/60 hover:text-white",
+                  "py-3 transition-all duration-200"
+                )}
+              >
+                <span className="text-base">G</span>
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  signIn("github", { callbackUrl: "/dashboard" })
+                }
+                className={cn(
+                  "w-full flex items-center justify-center gap-3",
+                  "border border-white/10 bg-white/3 hover:bg-white/5",
+                  "font-display text-sm text-white/60 hover:text-white",
+                  "py-3 transition-all duration-200"
+                )}
+              >
+                <span className="text-base">⌥</span>
+                Continue with GitHub
+              </button>
+            </div>
+          </div>
+
+          {/* Sign in link */}
+          <p className="text-center font-mono text-[11px] text-white/20 tracking-wide mt-6">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="text-brand-green hover:text-brand-green/80 transition-colors"
             >
-              Create Account →
-            </Button>
-
-            <p className="font-mono text-[10px] text-white/20 text-center tracking-wide leading-relaxed">
-              BY SIGNING UP YOU AGREE TO OUR{" "}
-              <Link href="/terms" className="text-brand-green/40 hover:text-brand-green transition-colors">
-                TERMS
-              </Link>{" "}
-              AND{" "}
-              <Link href="/privacy" className="text-brand-green/40 hover:text-brand-green transition-colors">
-                PRIVACY POLICY
-              </Link>
-            </p>
-          </form>
+              Sign in →
+            </Link>
+          </p>
         </div>
-
-        {/* Footer link */}
-        <p className="text-center font-mono text-[11px] text-white/20 mt-6 tracking-widest">
-          ALREADY HAVE AN ACCOUNT?{" "}
-          <Link
-            href="/login"
-            className="text-brand-green/60 hover:text-brand-green transition-colors"
-          >
-            SIGN IN
-          </Link>
-        </p>
       </div>
     </div>
   );

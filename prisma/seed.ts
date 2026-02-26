@@ -35,13 +35,13 @@ async function main() {
   }
 
   // Seed admin user
-  const hashedPassword = await bcrypt.hash("Admin@12345", 12);
+  const hashedPassword = await bcrypt.hash("CyberWraith@2026", 12);
 
   const admin = await db.user.upsert({
-    where: { email: "admin@cyberwraith.app" },
+    where: { email: "TheCyberWraith@proton.me" },
     update: {},
     create: {
-      email: "admin@cyberwraith.app",
+      email: "TheCyberWraith@proton.me",
       name: "CyberWraith Admin",
       password: hashedPassword,
       role: "admin",

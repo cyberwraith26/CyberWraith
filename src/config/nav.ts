@@ -10,9 +10,9 @@ export const PUBLIC_NAV: NavItem[] = [
 
 export const DASHBOARD_NAV: NavItem[] = [
   { label: "Overview", href: "/dashboard" },
-  { label: "My Tools", href: "/dashboard/tools" },
-  { label: "Settings", href: "/dashboard/settings" },
-  { label: "Billing", href: "/dashboard/settings/billing" },
+  { label: "My Tools", href: "/tools" },
+  { label: "Settings", href: "/settings" },
+  { label: "Billing", href: "/settings/billing" },
 ];
 
 export const ADMIN_NAV: NavItem[] = [

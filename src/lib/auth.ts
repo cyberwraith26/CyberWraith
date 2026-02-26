@@ -2,10 +2,10 @@ import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import GitHub from "next-auth/providers/github";
 import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { TIER_RANK } from "@/config/plans";
-import type { UserRole } from "@/types";
-import type { SubscriptionTier } from "@/types";
+import type { UserRole, SubscriptionTier } from "@/types";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -24,39 +24,45 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email as string },
-          include: { subscription: true },
-        });
+        try {
+          const user = await db.user.findUnique({
+            where: { email: credentials.email as string },
+            include: { subscription: true },
+          });
 
-        if (!user || !user.password) return null;
+          if (!user || !user.password) return null;
 
-        // Compare hashed password
-        const bcrypt = await import("bcryptjs");
-        const isValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
+          const isValid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
 
-        if (!isValid) return null;
+          if (!isValid) return null;
 
-        return {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          role: user.role as UserRole,
-          tier: (user.subscription?.tier ?? "free") as SubscriptionTier,
-        };
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role as UserRole,
+            tier: (user.subscription?.tier ?? "free") as SubscriptionTier,
+          };
+        } catch {
+          return null;
+        }
       },
     }),
   ],
 
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === "google" || account?.provider === "github") {
+      if (
+        account?.provider === "google" ||
+        account?.provider === "github"
+      ) {
         try {
           const existing = await db.user.findUnique({
             where: { email: user.email! },
@@ -92,15 +98,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.tier = (user as { tier?: string }).tier ?? "free";
       }
 
-      // Refresh tier from DB on each token refresh
+      // Refresh role and tier from DB on every token refresh
       if (token.id) {
-        const dbUser = await db.user.findUnique({
-          where: { id: token.id as string },
-          include: { subscription: true },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-          token.tier = dbUser.subscription?.tier ?? "free";
+        try {
+          const dbUser = await db.user.findUnique({
+            where: { id: token.id as string },
+            include: { subscription: true },
+          });
+          if (dbUser) {
+            token.role = dbUser.role;
+            token.tier = dbUser.subscription?.tier ?? "free";
+          }
+        } catch {
+          // Keep existing token values if DB call fails
         }
       }
 
@@ -110,8 +120,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id as string;
-        (session.user as { role?: string }).role = token.role as string;
-        (session.user as { tier?: string }).tier = token.tier as string;
+        (session.user as { role?: string }).role =
+          token.role as string;
+        (session.user as { tier?: string }).tier =
+          token.tier as string;
       }
       return session;
     },
@@ -133,5 +145,7 @@ export const hasAccess = (
   userTier: string,
   requiredTier: string
 ): boolean => {
-  return (TIER_RANK[userTier] ?? 0) >= (TIER_RANK[requiredTier] ?? 0);
+  return (
+    (TIER_RANK[userTier] ?? 0) >= (TIER_RANK[requiredTier] ?? 0)
+  );
 };

@@ -114,8 +114,8 @@ export const DashboardTopbar = ({ user }: DashboardTopbarProps) => {
               >
                 {[
                   { label: "Dashboard", href: "/dashboard" },
-                  { label: "Settings", href: "/dashboard/settings" },
-                  { label: "Billing", href: "/dashboard/settings/billing" },
+                  { label: "Settings", href: "/settings" },
+                  { label: "Billing", href: "/settings/billing" },
                 ].map((item) => (
                   <Link
                     key={item.href}

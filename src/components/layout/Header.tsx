@@ -9,17 +9,35 @@ import { MobileNav } from "./MobileNav";
 import { useAuth } from "@/hooks/useAuth";
 import { PUBLIC_NAV } from "@/config/nav";
 
+const HIDE_ON_PREFIXES = [
+  "/dashboard",
+  "/tools",
+  "/settings",
+  "/admin",
+  "/login",
+  "/signup",
+  "/forgot-password",
+];
+
 export const Header = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const { user, isAuthenticated, logout } = useAuth();
 
+  const shouldHide = HIDE_ON_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
+
   useEffect(() => {
+    setMounted(true);
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  if (shouldHide) return null;
 
   return (
     <>
@@ -74,7 +92,10 @@ export const Header = () => {
 
         {/* Auth Buttons */}
         <div className="hidden md:flex items-center gap-3">
-          {isAuthenticated ? (
+          {/* Show placeholder while hydrating to prevent flicker */}
+          {!mounted ? (
+            <div className="w-32 h-8" />
+          ) : isAuthenticated ? (
             <>
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm">
@@ -122,7 +143,6 @@ export const Header = () => {
         </button>
       </header>
 
-      {/* Mobile Nav */}
       <MobileNav
         isOpen={mobileOpen}
         onClose={() => setMobileOpen(false)}

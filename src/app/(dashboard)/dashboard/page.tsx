@@ -83,7 +83,7 @@ export default async function DashboardPage() {
               supercharge your workflow.
             </p>
           </div>
-          <Link href="/dashboard/settings/billing">
+          <Link href="/settings/billing">
             <Button variant="primary" size="sm">
               Upgrade Now →
             </Button>
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
             // YOUR_TOOLS
           </div>
           <Link
-            href="/dashboard/tools"
+            href="/tools"
             className="font-mono text-[10px] text-white/30 hover:text-brand-green tracking-widest transition-colors"
           >
             VIEW ALL →
@@ -147,7 +147,7 @@ export default async function DashboardPage() {
                   {tool.description}
                 </p>
 
-                <Link href={`/dashboard/tools/${tool.slug}`}>
+                <Link href={`/tools/${tool.slug}`}>
                   <Button
                     variant="ghost"
                     size="sm"

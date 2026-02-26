@@ -130,7 +130,7 @@ export default async function ToolsPage() {
                     Coming Soon
                   </Button>
                 ) : hasAccess ? (
-                  <Link href={`/dashboard/tools/${tool.slug}`}>
+                  <Link href= {`/tools/${tool.slug}`}>
                     <Button variant="primary" size="sm" className="w-full">
                       Launch {tool.name} →
                     </Button>
