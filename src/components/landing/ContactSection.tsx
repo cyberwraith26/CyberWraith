@@ -20,19 +20,20 @@ export const ContactSection = () => {
     type: "saas",
     message: "",
   });
-  const [errors, setErrors] = useState<Partial<ContactInput>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ContactInput, string>>>({});
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate
     const result = contactSchema.safeParse(form);
     if (!result.success) {
-      const fieldErrors: Partial<ContactInput> = {};
+      const fieldErrors: Partial<Record<keyof ContactInput, string>> = {};
       result.error.errors.forEach((err) => {
         const field = err.path[0] as keyof ContactInput;
-        fieldErrors[field] = err.message;
+        if (!fieldErrors[field]) {
+          fieldErrors[field] = err.message;
+        }
       });
       setErrors(fieldErrors);
       return;
@@ -128,7 +129,10 @@ export const ContactSection = () => {
               options={INQUIRY_OPTIONS}
               value={form.type}
               onChange={(value) =>
-                setForm((prev) => ({ ...prev, type: value as ContactInput["type"] }))
+                setForm((prev) => ({
+                  ...prev,
+                  type: value as ContactInput["type"],
+                }))
               }
               error={errors.type}
             />
