@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 const BLOG_POSTS = [
@@ -377,7 +377,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = BLOG_POSTS.find((p) => p.slug === params.slug);
+  const { slug } = await params;
+  const post = BLOG_POSTS.find((p) => p.slug === slug);
   if (!post) return { title: "Post Not Found" };
   return {
     title: post.title,
@@ -385,30 +386,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function BlogPostPage({ params }: Props) {
-  const post = BLOG_POSTS.find((p) => p.slug === params.slug);
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
+  const post = BLOG_POSTS.find((p) => p.slug === slug);
   if (!post) notFound();
 
-  const related = BLOG_POSTS.filter(
-    (p) => p.slug !== post.slug
-  ).slice(0, 2);
+  const related = BLOG_POSTS.filter((p) => p.slug !== post.slug).slice(0, 2);
 
   return (
     <div className="min-h-screen bg-dark grid-bg py-28 px-6">
       <div className="max-w-3xl mx-auto">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 font-mono text-[10px] text-white/20 tracking-widest mb-12">
-          <Link
-            href="/"
-            className="hover:text-brand-green transition-colors"
-          >
+          <Link href="/" className="hover:text-brand-green transition-colors">
             HOME
           </Link>
           <span>/</span>
-          <Link
-            href="/blog"
-            className="hover:text-brand-green transition-colors"
-          >
+          <Link href="/blog" className="hover:text-brand-green transition-colors">
             BLOG
           </Link>
           <span>/</span>
@@ -495,15 +489,14 @@ export default function BlogPostPage({ params }: Props) {
             Ready to put this into practice?
           </h3>
           <p className="text-white/40 font-display text-sm mb-6">
-            CyberWraith gives you the tools to apply everything
-            in this article. Start free — no credit card required.
+            CyberWraith gives you the tools to apply everything in this
+            article. Start free — no credit card required.
           </p>
           <Link
             href="/signup"
             className="inline-flex items-center gap-2 bg-brand-green text-black font-mono text-sm font-bold px-8 py-3 tracking-widest uppercase hover:bg-[#00ffaa] transition-colors"
             style={{
-              clipPath:
-                "polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%)",
+              clipPath: "polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%)",
             }}
           >
             Start Free Trial →

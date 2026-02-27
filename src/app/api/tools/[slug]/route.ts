@@ -5,11 +5,12 @@ import { canAccessTool } from "@/config/plans";
 import { db } from "@/lib/db";
 
 interface Params {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export async function GET(req: Request, { params }: Params) {
   try {
+    const { slug } = await params;
     const session = await auth();
 
     if (!session?.user) {
@@ -19,7 +20,7 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    const tool = getToolBySlug(params.slug);
+    const tool = getToolBySlug(slug);
 
     if (!tool) {
       return NextResponse.json(

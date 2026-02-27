@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import type { Metadata } from "next";
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
@@ -13,7 +13,8 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const service = getServiceBySlug(params.slug);
+  const { slug } = await params;
+  const service = getServiceBySlug(slug);
   if (!service) return { title: "Service Not Found" };
   return {
     title: service.title,
@@ -21,8 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ServiceDetailPage({ params }: Props) {
-  const service = getServiceBySlug(params.slug);
+export default async function ServiceDetailPage({ params }: Props) {
+  const { slug } = await params;
+  const service = getServiceBySlug(slug);
   if (!service) notFound();
 
   return (
