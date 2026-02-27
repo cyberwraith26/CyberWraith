@@ -14,7 +14,7 @@ interface ToolCardProps {
   compact?: boolean;
 }
 
-const TAG_BADGE_VARIANTS: Record
+const TAG_BADGE_VARIANTS: Record<
   string,
   "green" | "cyan" | "purple" | "amber" | "red"
 > = {
@@ -41,11 +41,7 @@ export const ToolCard = ({
   const isLocked = !hasAccess && !isComingSoon;
 
   return (
-    <Card
-      hoverable={hasAccess && !isComingSoon}
-      glowColor={hasAccess ? tool.color : undefined}
-      className="group relative overflow-hidden h-full"
-    >
+    <Card className="group relative overflow-hidden h-full">
       {/* Top color accent */}
       <div
         className="absolute top-0 left-0 right-0 h-px opacity-0 group-hover:opacity-100 transition-opacity duration-300"
@@ -60,7 +56,7 @@ export const ToolCard = ({
             <div className="font-mono text-[10px] text-white/25 tracking-widest mb-3 leading-relaxed">
               {getUpgradeMessage(tool.requiredTier)}
             </div>
-            <Link href="/dashboard/settings/billing">
+            <Link href="/settings/billing">
               <Button variant="primary" size="sm">
                 Upgrade Plan →
               </Button>
@@ -138,22 +134,13 @@ export const ToolCard = ({
             </Button>
           ) : hasAccess ? (
             <div className="flex gap-2">
-              <Link
-                href={`/dashboard/tools/${tool.slug}`}
-                className="flex-1"
-              >
-                <Button
-                  variant="primary"
-                  size="sm"
-                  className="w-full"
-                >
+              <Link href={`/tools/${tool.slug}`} className="flex-1">
+                <Button variant="primary" size="sm" className="w-full">
                   Launch →
                 </Button>
               </Link>
               {tool.demoAvailable && (
-                <Link
-                  href={`/dashboard/tools/${tool.slug}?demo=true`}
-                >
+                <Link href={`/tools/${tool.slug}?demo=true`}>
                   <Button variant="secondary" size="sm">
                     Demo
                   </Button>
@@ -161,12 +148,8 @@ export const ToolCard = ({
               )}
             </div>
           ) : (
-            <Link href="/dashboard/settings/billing">
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full"
-              >
+            <Link href="/settings/billing">
+              <Button variant="secondary" size="sm" className="w-full">
                 Unlock →
               </Button>
             </Link>
